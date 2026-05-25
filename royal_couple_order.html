@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宫廷御膳传旨系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        royalGold: '#FFD700',
+                        royalGoldDark: '#D4AF37',
+                        royalRed: '#C41E3A',
+                        royalRedDark: '#8B0000',
+                        royalNavy: '#1a1a2e',
+                        royalDark: '#0f0f1a',
+                        royalCream: '#f5f0e1',
+                    },
+                    fontFamily: {
+                        song: ['SimSun', 'STSong', 'serif'],
+                        kai: ['KaiTi', 'STKaiti', 'serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .royal-border {
+                border: 3px solid #FFD700;
+                box-shadow: 0 0 25px rgba(255, 215, 0, 0.4), inset 0 0 30px rgba(255, 215, 0, 0.1);
+            }
+            .royal-border-thin {
+                border: 2px solid #D4AF37;
+                box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+            }
+            .royal-gradient {
+                background: linear-gradient(135deg, #2d1810 0%, #1a0a0a 25%, #0f0f1a 50%, #1a0a0a 75%, #2d1810 100%);
+            }
+            .gold-gradient {
+                background: linear-gradient(135deg, #D4AF37 0%, #FFD700 30%, #f4d03f 50%, #FFD700 70%, #D4AF37 100%);
+            }
+            .red-gradient {
+                background: linear-gradient(135deg, #8B0000 0%, #C41E3A 50%, #8B0000 100%);
+            }
+            .cloud-pattern {
+                background-image:
+                    radial-gradient(ellipse at 20% 20%, rgba(255, 215, 0, 0.08) 0%, transparent 50%),
+                    radial-gradient(ellipse at 80% 80%, rgba(255, 215, 0, 0.08) 0%, transparent 50%),
+                    radial-gradient(ellipse at 50% 50%, rgba(196, 30, 58, 0.05) 0%, transparent 60%),
+                    radial-gradient(ellipse at 10% 90%, rgba(212, 175, 55, 0.06) 0%, transparent 40%);
+            }
+            .dragon-border {
+                position: relative;
+            }
+            .dragon-border::before {
+                content: '';
+                position: absolute;
+                top: -3px;
+                left: -3px;
+                right: -3px;
+                bottom: -3px;
+                background: linear-gradient(45deg, #D4AF37, #FFD700, #f4d03f, #FFD700, #D4AF37);
+                background-size: 400% 400%;
+                z-index: -1;
+                border-radius: inherit;
+                animation: goldShine 3s ease infinite;
+            }
+            @keyframes goldShine {
+                0%, 100% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+            }
+            .imperial-seal {
+                position: relative;
+            }
+            .imperial-seal::after {
+                content: '御';
+                position: absolute;
+                top: 15px;
+                right: 20px;
+                font-size: 3rem;
+                color: rgba(139, 0, 0, 0.15);
+                font-family: KaiTi, STKaiti, serif;
+                transform: rotate(12deg);
+                font-weight: bold;
+            }
+            .text-shadow-gold {
+                text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            }
+            .btn-hover-gold:hover {
+                box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+                transform: scale(1.02);
+            }
+            .btn-hover-red:hover {
+                box-shadow: 0 0 20px rgba(196, 30, 58, 0.6);
+            }
+        }
+    </style>
+</head>
+<body class="royal-gradient cloud-pattern min-h-screen font-song text-royalCream">
+    <!-- 配置区域 - 可修改商家列表 -->
+    <script>
+        // ==================== 配置区域开始 ====================
+        const CONFIG = {
+            // 商家列表 - 可根据喜好增删修改
+            merchants: [
+                { id: 1, name: 'Tims咖啡', icon: '☕' },
+                { id: 2, name: '潇湘阁', icon: '🌶️' },
+                { id: 3, name: '糕研社', icon: '🍰' },
+                { id: 4, name: '喜茶', icon: '🧋' },
+                { id: 5, name: '西树泡芙', icon: '🥯' },
+                { id: 6, name: '锦渝', icon: '🍜' },
+                { id: 7, name: '烧烤', icon: '🍢' },
+                { id: 8, name: '果多美', icon: '🍎' },
+                { id: 9, name: '霸王茶姬', icon: '🍵' },
+                { id: 10, name: '星巴克', icon: '☕' },
+                { id: 11, name: '胖哥俩', icon: '🦀' },
+                { id: 12, name: '其他', icon: '✨' }
+            ],
+            adminPassword: 'admin123' // 后台密码，可自行修改
+        };
+        // ==================== 配置区域结束 ====================
+    </script>
+
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- 主标题 -->
+        <header class="text-center mb-8">
+            <div class="inline-block royal-border rounded-lg p-6 bg-royalNavy/90 imperial-seal">
+                <h1 class="text-3xl md:text-4xl font-kai font-bold text-royalGold tracking-widest text-shadow-gold">
+                    <i class="fa fa-star mr-2"></i>
+                    传旨意至小赵子准备今日御膳
+                    <i class="fa fa-star ml-2"></i>
+                </h1>
+                <div class="h-1.5 gold-gradient mt-4 rounded"></div>
+            </div>
+        </header>
+
+        <!-- 导航标签 -->
+        <div class="flex justify-center mb-6">
+            <div class="royal-border rounded-lg overflow-hidden flex">
+                <button id="tabFront" class="px-6 py-3 red-gradient text-white font-kai font-bold transition-all btn-hover-red">
+                    <i class="fa fa-cutlery mr-2"></i>传膳
+                </button>
+                <button id="tabAdmin" class="px-6 py-3 bg-royalNavy text-royalGold font-kai font-bold transition-all hover:bg-royalNavy/80">
+                    <i class="fa fa-list-alt mr-2"></i>御膳房
+                </button>
+            </div>
+        </div>
+
+        <!-- 前台点餐界面 -->
+        <div id="frontPage" class="page">
+            <div class="royal-border rounded-xl bg-royalNavy/90 p-6 imperial-seal">
+                <!-- 商家选择 -->
+                <div class="mb-6">
+                    <h2 class="text-xl font-kai text-royalGold mb-4 text-center text-shadow-gold">
+                        <i class="fa fa-book mr-2"></i>钦点御膳商号
+                    </h2>
+                    <div id="merchantGrid" class="grid grid-cols-3 md:grid-cols-4 gap-3">
+                        <!-- 商家按钮将由JS动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 已选商家显示 -->
+                <div id="selectedMerchant" class="hidden mb-6">
+                    <div class="gold-gradient text-royalDark rounded-lg p-4 text-center font-kai font-bold shadow-lg">
+                        <span class="text-lg">已钦点：</span>
+                        <span id="selectedMerchantName" class="text-xl"></span>
+                        <button id="clearMerchant" class="ml-4 text-royalRedDark hover:text-royalRed transition-colors">
+                            <i class="fa fa-times-circle"></i> 重选
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 备注输入区域 -->
+                <div id="orderSection" class="hidden">
+                    <h2 class="text-xl font-kai text-royalGold mb-4 text-center text-shadow-gold">
+                        <i class="fa fa-scroll mr-2"></i>陛下旨意
+                    </h2>
+                    <div class="mb-4">
+                        <textarea
+                            id="orderNotes"
+                            rows="6"
+                            class="w-full royal-border-thin rounded-lg bg-royalDark/70 text-royalCream p-4 font-kai text-lg placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-royalGold resize-none"
+                            placeholder="请陛下吩咐：想吃什么、口味要求、注意事项、送达时间、地址等"
+                        ></textarea>
+                    </div>
+
+                    <!-- 传旨按钮 -->
+                    <div class="text-center">
+                        <button id="submitOrder" class="dragon-border gold-gradient text-royalDark px-12 py-4 rounded-lg font-kai font-bold text-xl btn-hover-gold transition-all shadow-lg">
+                            <i class="fa fa-bullhorn mr-2"></i>传 旨
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 后台管理界面 -->
+        <div id="adminPage" class="page hidden">
+            <!-- 密码验证 -->
+            <div id="adminLogin" class="royal-border rounded-xl bg-royalNavy/90 p-6">
+                <h2 class="text-xl font-kai text-royalGold mb-4 text-center text-shadow-gold">
+                    <i class="fa fa-lock mr-2"></i>御膳房门禁
+                </h2>
+                <div class="max-w-sm mx-auto">
+                    <input
+                        type="password"
+                        id="adminPassword"
+                        class="w-full royal-border-thin rounded-lg bg-royalDark/70 text-royalCream p-3 font-kai mb-4 focus:outline-none focus:ring-2 focus:ring-royalGold"
+                        placeholder="请输入通关密令"
+                    >
+                    <div class="text-center">
+                        <button id="adminLoginBtn" class="gold-gradient text-royalDark px-8 py-3 rounded-lg font-kai font-bold btn-hover-gold transition-all">
+                            进入御膳房
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 管理内容 -->
+            <div id="adminContent" class="hidden">
+                <!-- 状态标签 -->
+                <div class="flex justify-center mb-6">
+                    <div class="royal-border rounded-lg overflow-hidden flex">
+                        <button id="tabPending" class="px-6 py-2 red-gradient text-white font-kai font-bold">
+                            待办旨意
+                        </button>
+                        <button id="tabCompleted" class="px-6 py-2 bg-royalNavy text-royalGold font-kai font-bold">
+                            已办旨意
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 待办旨意列表 -->
+                <div id="pendingList" class="space-y-4">
+                    <!-- 订单将由JS动态生成 -->
+                </div>
+
+                <!-- 已办旨意列表 -->
+                <div id="completedList" class="hidden space-y-4">
+                    <!-- 订单将由JS动态生成 -->
+                </div>
+
+                <!-- 空状态 -->
+                <div id="emptyState" class="royal-border rounded-xl bg-royalNavy/90 p-8 text-center">
+                    <i class="fa fa-inbox text-4xl text-royalGold mb-4"></i>
+                    <p class="font-kai text-royalCream">暂无旨意，小赵子恭候圣驾...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成功提示弹窗 -->
+    <div id="successModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="royal-border rounded-xl bg-royalNavy p-8 text-center max-w-sm mx-4 dragon-border">
+            <div class="text-6xl mb-4">📜</div>
+            <h3 class="text-2xl font-kai text-royalGold font-bold mb-2 text-shadow-gold">圣旨已传达</h3>
+            <p class="font-kai text-royalCream text-lg">小赵子领旨谢恩！</p>
+            <button id="closeModal" class="mt-6 gold-gradient text-royalDark px-8 py-3 rounded-lg font-kai font-bold btn-hover-gold transition-all">
+                知道了
+            </button>
+        </div>
+    </div>
+
+    <!-- 新订单提醒声音 -->
+    <audio id="notificationSound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT" type="audio/wav">
+    </audio>
+
+    <script>
+        // 状态管理
+        let state = {
+            selectedMerchant: null,
+            isAdminLoggedIn: false,
+            currentTab: 'pending',
+            orders: []
+        };
+
+        // DOM元素
+        const elements = {
+            tabFront: document.getElementById('tabFront'),
+            tabAdmin: document.getElementById('tabAdmin'),
+            frontPage: document.getElementById('frontPage'),
+            adminPage: document.getElementById('adminPage'),
+            merchantGrid: document.getElementById('merchantGrid'),
+            selectedMerchant: document.getElementById('selectedMerchant'),
+            selectedMerchantName: document.getElementById('selectedMerchantName'),
+            clearMerchant: document.getElementById('clearMerchant'),
+            orderSection: document.getElementById('orderSection'),
+            orderNotes: document.getElementById('orderNotes'),
+            submitOrder: document.getElementById('submitOrder'),
+            adminLogin: document.getElementById('adminLogin'),
+            adminPassword: document.getElementById('adminPassword'),
+            adminLoginBtn: document.getElementById('adminLoginBtn'),
+            adminContent: document.getElementById('adminContent'),
+            tabPending: document.getElementById('tabPending'),
+            tabCompleted: document.getElementById('tabCompleted'),
+            pendingList: document.getElementById('pendingList'),
+            completedList: document.getElementById('completedList'),
+            emptyState: document.getElementById('emptyState'),
+            successModal: document.getElementById('successModal'),
+            closeModal: document.getElementById('closeModal'),
+            notificationSound: document.getElementById('notificationSound')
+        };
+
+        // 初始化
+        function init() {
+            loadOrders();
+            renderMerchants();
+            bindEvents();
+            checkNewOrders();
+        }
+
+        // 加载订单数据
+        function loadOrders() {
+            const saved = localStorage.getItem('imperialOrders');
+            if (saved) {
+                state.orders = JSON.parse(saved);
+            }
+        }
+
+        // 保存订单数据
+        function saveOrders() {
+            localStorage.setItem('imperialOrders', JSON.stringify(state.orders));
+        }
+
+        // 渲染商家列表
+        function renderMerchants() {
+            elements.merchantGrid.innerHTML = CONFIG.merchants.map(merchant => `
+                <button
+                    class="merchant-btn royal-border-thin rounded-lg p-3 bg-royalDark/50 hover:bg-royalRed/30 transition-all font-kai text-center ${state.selectedMerchant?.id === merchant.id ? 'bg-royalRed/50 ring-2 ring-royalGold' : ''}"
+                    data-id="${merchant.id}"
+                >
+                    <div class="text-2xl mb-1">${merchant.icon}</div>
+                    <div class="text-sm">${merchant.name}</div>
+                </button>
+            `).join('');
+        }
+
+        // 绑定事件
+        function bindEvents() {
+            // 页面切换
+            elements.tabFront.addEventListener('click', () => switchPage('front'));
+            elements.tabAdmin.addEventListener('click', () => switchPage('admin'));
+
+            // 商家选择
+            elements.merchantGrid.addEventListener('click', (e) => {
+                const btn = e.target.closest('.merchant-btn');
+                if (btn) {
+                    const merchantId = parseInt(btn.dataset.id);
+                    selectMerchant(merchantId);
+                }
+            });
+
+            // 清除商家选择
+            elements.clearMerchant.addEventListener('click', clearMerchantSelection);
+
+            // 提交订单
+            elements.submitOrder.addEventListener('click', submitOrder);
+
+            // 后台登录
+            elements.adminLoginBtn.addEventListener('click', adminLogin);
+            elements.adminPassword.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') adminLogin();
+            });
+
+            // 后台标签切换
+            elements.tabPending.addEventListener('click', () => switchAdminTab('pending'));
+            elements.tabCompleted.addEventListener('click', () => switchAdminTab('completed'));
+
+            // 关闭弹窗
+            elements.closeModal.addEventListener('click', () => {
+                elements.successModal.classList.add('hidden');
+            });
+        }
+
+        // 页面切换
+        function switchPage(page) {
+            if (page === 'front') {
+                elements.frontPage.classList.remove('hidden');
+                elements.adminPage.classList.add('hidden');
+                elements.tabFront.classList.add('red-gradient', 'text-white');
+                elements.tabFront.classList.remove('bg-royalNavy', 'text-royalGold');
+                elements.tabAdmin.classList.remove('red-gradient', 'text-white');
+                elements.tabAdmin.classList.add('bg-royalNavy', 'text-royalGold');
+            } else {
+                elements.frontPage.classList.add('hidden');
+                elements.adminPage.classList.remove('hidden');
+                elements.tabAdmin.classList.add('red-gradient', 'text-white');
+                elements.tabAdmin.classList.remove('bg-royalNavy', 'text-royalGold');
+                elements.tabFront.classList.remove('red-gradient', 'text-white');
+                elements.tabFront.classList.add('bg-royalNavy', 'text-royalGold');
+
+                if (state.isAdminLoggedIn) {
+                    renderOrders();
+                }
+            }
+        }
+
+        // 选择商家
+        function selectMerchant(merchantId) {
+            state.selectedMerchant = CONFIG.merchants.find(m => m.id === merchantId);
+            renderMerchants();
+
+            elements.selectedMerchant.classList.remove('hidden');
+            elements.selectedMerchantName.textContent = `${state.selectedMerchant.icon} ${state.selectedMerchant.name}`;
+            elements.orderSection.classList.remove('hidden');
+        }
+
+        // 清除商家选择
+        function clearMerchantSelection() {
+            state.selectedMerchant = null;
+            renderMerchants();
+            elements.selectedMerchant.classList.add('hidden');
+            elements.orderSection.classList.add('hidden');
+            elements.orderNotes.value = '';
+        }
+
+        // 提交订单
+        function submitOrder() {
+            if (!state.selectedMerchant) {
+                alert('请陛下先钦点御膳商号！');
+                return;
+            }
+
+            const notes = elements.orderNotes.value.trim();
+            if (!notes) {
+                alert('请陛下降下旨意！');
+                return;
+            }
+
+            const order = {
+                id: Date.now(),
+                merchant: state.selectedMerchant,
+                notes: notes,
+                timestamp: new Date().toLocaleString('zh-CN'),
+                completed: false
+            };
+
+            state.orders.unshift(order);
+            saveOrders();
+
+            // 显示成功弹窗
+            elements.successModal.classList.remove('hidden');
+
+            // 重置表单
+            clearMerchantSelection();
+
+            // 播放提醒声音
+            playNotification();
+        }
+
+        // 后台登录
+        function adminLogin() {
+            if (elements.adminPassword.value === CONFIG.adminPassword) {
+                state.isAdminLoggedIn = true;
+                elements.adminLogin.classList.add('hidden');
+                elements.adminContent.classList.remove('hidden');
+                renderOrders();
+            } else {
+                alert('密令错误，不得入内！');
+            }
+        }
+
+        // 切换后台标签
+        function switchAdminTab(tab) {
+            state.currentTab = tab;
+            if (tab === 'pending') {
+                elements.tabPending.classList.add('red-gradient', 'text-white');
+                elements.tabPending.classList.remove('bg-royalNavy', 'text-royalGold');
+                elements.tabCompleted.classList.remove('red-gradient', 'text-white');
+                elements.tabCompleted.classList.add('bg-royalNavy', 'text-royalGold');
+                elements.pendingList.classList.remove('hidden');
+                elements.completedList.classList.add('hidden');
+            } else {
+                elements.tabCompleted.classList.add('red-gradient', 'text-white');
+                elements.tabCompleted.classList.remove('bg-royalNavy', 'text-royalGold');
+                elements.tabPending.classList.remove('red-gradient', 'text-white');
+                elements.tabPending.classList.add('bg-royalNavy', 'text-royalGold');
+                elements.completedList.classList.remove('hidden');
+                elements.pendingList.classList.add('hidden');
+            }
+            renderOrders();
+        }
+
+        // 渲染订单列表
+        function renderOrders() {
+            const pendingOrders = state.orders.filter(o => !o.completed);
+            const completedOrders = state.orders.filter(o => o.completed);
+
+            // 渲染待办
+            if (pendingOrders.length === 0) {
+                elements.pendingList.innerHTML = '';
+                elements.emptyState.classList.remove('hidden');
+            } else {
+                elements.emptyState.classList.add('hidden');
+                elements.pendingList.innerHTML = pendingOrders.map(order => createOrderCard(order, false)).join('');
+            }
+
+            // 渲染已办
+            elements.completedList.innerHTML = completedOrders.length === 0
+                ? '<div class="royal-border rounded-xl bg-royalNavy/90 p-8 text-center"><p class="font-kai text-royalCream">暂无已办旨意</p></div>'
+                : completedOrders.map(order => createOrderCard(order, true)).join('');
+
+            // 绑定订单操作事件
+            bindOrderEvents();
+        }
+
+        // 创建订单卡片
+        function createOrderCard(order, isCompleted) {
+            return `
+                <div class="royal-border rounded-xl bg-royalNavy/90 p-5 ${isCompleted ? 'opacity-70' : ''}">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center">
+                            <span class="text-2xl mr-2">${order.merchant.icon}</span>
+                            <span class="font-kai font-bold text-royalGold text-lg text-shadow-gold">${order.merchant.name}</span>
+                        </div>
+                        <span class="text-sm text-gray-400 font-kai">${order.timestamp}</span>
+                    </div>
+                    <div class="bg-royalDark/50 rounded-lg p-4 mb-4 font-kai text-royalCream whitespace-pre-wrap border border-royalGold/30">
+                        ${order.notes}
+                    </div>
+                    <div class="flex justify-end gap-3">
+                        ${!isCompleted ? `
+                            <button class="mark-complete-btn gold-gradient text-royalDark px-6 py-2 rounded-lg font-kai font-bold btn-hover-gold transition-all" data-id="${order.id}">
+                                <i class="fa fa-check mr-1"></i> 接旨
+                            </button>
+                        ` : ''}
+                        <button class="delete-btn red-gradient text-white px-4 py-2 rounded-lg font-kai hover:opacity-90 transition-opacity" data-id="${order.id}">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 绑定订单操作事件
+        function bindOrderEvents() {
+            // 标记已完成
+            document.querySelectorAll('.mark-complete-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const orderId = parseInt(btn.dataset.id);
+                    markOrderComplete(orderId);
+                });
+            });
+
+            // 删除订单
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const orderId = parseInt(btn.dataset.id);
+                    deleteOrder(orderId);
+                });
+            });
+        }
+
+        // 标记订单完成
+        function markOrderComplete(orderId) {
+            const order = state.orders.find(o => o.id === orderId);
+            if (order) {
+                order.completed = true;
+                saveOrders();
+                renderOrders();
+            }
+        }
+
+        // 删除订单
+        function deleteOrder(orderId) {
+            if (confirm('确定要销毁这道旨意吗？')) {
+                state.orders = state.orders.filter(o => o.id !== orderId);
+                saveOrders();
+                renderOrders();
+            }
+        }
+
+        // 播放提醒声音
+        function playNotification() {
+            try {
+                elements.notificationSound.currentTime = 0;
+                elements.notificationSound.play().catch(() => {});
+            } catch (e) {}
+        }
+
+        // 检查新订单（简单的页面可见性检测）
+        function checkNewOrders() {
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden && state.isAdminLoggedIn) {
+                    renderOrders();
+                }
+            });
+        }
+
+        // 启动应用
+        init();
+    </script>
+</body>
+</html>
